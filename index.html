@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il Sangue – Quiz Interattivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #c0152a;
+    --red-dark: #8b0d1c;
+    --red-light: #e8394f;
+    --cream: #fdf6f0;
+    --dark: #1a0a0d;
+    --card-bg: #fff8f5;
+    --border: #f0d0d5;
+    --text: #2d1215;
+    --muted: #8a6068;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(192,21,42,0.08) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(192,21,42,0.03) 60px, rgba(192,21,42,0.03) 61px);
+  }
+
+  header {
+    text-align: center;
+    padding: 56px 24px 32px;
+    position: relative;
+  }
+
+  .dna-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 900;
+    color: var(--red-dark);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+  }
+
+  .progress-bar-wrap {
+    max-width: 560px;
+    margin: 24px auto 0;
+    background: var(--border);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red-light), var(--red-dark));
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .progress-label {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* CARD DECK */
+  .deck {
+    max-width: 680px;
+    margin: 40px auto 0;
+    padding: 0 20px;
+    position: relative;
+    min-height: 420px;
+  }
+
+  .card {
+    position: absolute;
+    width: calc(100% - 40px);
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px 28px;
+    box-shadow: 0 8px 40px rgba(192,21,42,0.10), 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.55s cubic-bezier(.4,0,.2,1), opacity 0.45s ease;
+    cursor: default;
+    user-select: none;
+  }
+
+  .card.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(30px) scale(0.96);
+  }
+
+  .card.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    z-index: 10;
+  }
+
+  .card-num {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--red-light);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-num::after {
+    content: '';
+    display: block;
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .question {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.15rem, 3vw, 1.45rem);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--dark);
+    margin-bottom: 28px;
+  }
+
+  .answer-reveal {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.6s cubic-bezier(.4,0,.2,1), opacity 0.4s ease;
+    opacity: 0;
+  }
+
+  .answer-reveal.open {
+    max-height: 800px;
+    opacity: 1;
+  }
+
+  .answer-box {
+    background: linear-gradient(135deg, #fff0f2 0%, #fff8f0 100%);
+    border-left: 4px solid var(--red);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 20px;
+    font-size: 0.97rem;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .answer-box strong {
+    color: var(--red-dark);
+  }
+
+  .btn-reveal {
+    margin-top: 22px;
+    padding: 12px 28px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-reveal:hover { background: var(--red-dark); transform: translateY(-2px); }
+  .btn-reveal:active { transform: translateY(0); }
+
+  .btn-reveal.hide-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1.5px solid var(--border);
+    margin-left: 8px;
+  }
+  .btn-reveal.hide-btn:hover { background: var(--border); }
+
+  /* NAVIGATION */
+  .nav {
+    max-width: 680px;
+    margin: 480px auto 0;
+    padding: 0 20px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-btn {
+    padding: 13px 32px;
+    border-radius: 12px;
+    border: 2px solid var(--red);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.03em;
+  }
+
+  .nav-btn.prev {
+    background: transparent;
+    color: var(--red);
+  }
+  .nav-btn.prev:hover { background: var(--red); color: #fff; }
+
+  .nav-btn.next {
+    background: var(--red);
+    color: #fff;
+  }
+  .nav-btn.next:hover { background: var(--red-dark); border-color: var(--red-dark); }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* ALL CARDS VIEW */
+  .toggle-view {
+    text-align: center;
+    margin: 12px 0 32px;
+  }
+
+  .toggle-btn {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .toggle-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .all-cards {
+    display: none;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .all-cards.show { display: flex; }
+
+  .all-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 28px 22px;
+    box-shadow: 0 2px 12px rgba(192,21,42,0.06);
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 48px 24px 36px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-credit {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #c0152a, #e8394f, #ff6b35, #e8394f, #c0152a);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+    letter-spacing: 0.01em;
+  }
+
+  .footer-sub {
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 28px 20px 22px; }
+    .nav { margin-top: 460px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="dna-icon">🩸</span>
+  <h1>Il Sangue</h1>
+  <p>Domande pag. 131 · Quiz interattivo</p>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar" style="width:10%"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">Domanda 1 di 10</div>
+</header>
+
+<!-- SINGLE CARD MODE -->
+<div class="deck" id="deck">
+</div>
+
+<div class="nav" id="nav">
+  <button class="nav-btn prev" id="prevBtn" onclick="changeCard(-1)" disabled>← Precedente</button>
+  <button class="nav-btn next" id="nextBtn" onclick="changeCard(1)">Successiva →</button>
+</div>
+
+<div class="toggle-view">
+  <button class="toggle-btn" onclick="toggleAllCards()">📋 Mostra tutte le domande</button>
+</div>
+
+<!-- ALL CARDS MODE -->
+<div class="all-cards" id="allCards"></div>
+
+<footer>
+  <div class="footer-credit">✦ Creato da Enrico Parisi · 3I Bio ✦</div>
+  <div class="footer-sub">Anno Scolastico 2025/2026</div>
+</footer>
+
+<script>
+const cards = [
+  {
+    q: "1. Che cos'è l'ematocrito? Qual è il suo valore normale?",
+    a: `L'<strong>ematocrito</strong> è la percentuale del volume totale del sangue occupata dagli eritrociti (globuli rossi). Si misura centrifugando il sangue in un tubo calibrato: gli elementi cellulari si depositano sul fondo, mentre il plasma rimane nella parte superiore.<br><br>
+    Il valore normale varia in base al sesso:<br>
+    • <strong>Maschi adulti:</strong> 40–54%<br>
+    • <strong>Femmine adulte:</strong> 37–47%<br><br>
+    Un ematocrito troppo basso indica <em>anemia</em>; troppo alto può indicare <em>policitemia</em> o disidratazione.`
+  },
+  {
+    q: "2. Qual è il volume del sangue in un maschio adulto?",
+    a: `In un <strong>maschio adulto</strong> il volume totale del sangue è di circa <strong>5–6 litri</strong> (mediamente 5,5 L), corrispondenti a circa il 7–8% del peso corporeo.<br><br>
+    Nelle femmine il volume è leggermente inferiore (4–5 L), in parte per la minor massa muscolare e in parte per ragioni ormonali. Il volume ematico si riduce in condizioni di emorragia, disidratazione e shock.`
+  },
+  {
+    q: "3. Qual è il pH del sangue?",
+    a: `Il sangue ha un <strong>pH leggermente alcalino</strong>, compreso tra <strong>7,35 e 7,45</strong> (valore medio: 7,4).<br><br>
+    Questo equilibrio è mantenuto da potenti <strong>sistemi tampone</strong>:<br>
+    • Il sistema bicarbonato/acido carbonico (principale)<br>
+    • Le proteine plasmatiche (es. albumine)<br>
+    • L'emoglobina<br><br>
+    Se il pH scende sotto 7,35 si parla di <em>acidosi</em>; se supera 7,45 si parla di <em>alcalosi</em>. Entrambe le condizioni possono essere letali se non corrette tempestivamente.`
+  },
+  {
+    q: "4. Quale organo produce la maggior parte delle proteine plasmatiche?",
+    a: `La quasi totalità delle <strong>proteine plasmatiche</strong> è prodotta dal <strong>fegato</strong> (epatociti).<br><br>
+    Le principali proteine prodotte dal fegato sono:<br>
+    • <strong>Albumine</strong> (~60% del totale)<br>
+    • <strong>Fibrinogeno</strong> (fondamentale per la coagulazione)<br>
+    • <strong>Globuline</strong> alfa e beta<br>
+    • Fattori della coagulazione (II, VII, IX, X…)<br><br>
+    Eccezione: le <strong>immunoglobuline</strong> (gamma-globuline) sono prodotte dai <em>linfociti B</em> e dai plasmacellule, non dal fegato.`
+  },
+  {
+    q: "5. A che cosa servono le albumine?",
+    a: `Le <strong>albumine</strong> sono le proteine plasmatiche più abbondanti e svolgono funzioni essenziali:<br><br>
+    • <strong>Pressione oncotica:</strong> richiamano acqua nel circolo sanguigno, impedendo l'edema tissutale (accumulo di liquidi nei tessuti)<br>
+    • <strong>Trasporto:</strong> legano e trasportano molecole scarsamente solubili come ormoni tiroidei, acidi grassi, bilirubina, calcio e molti farmaci<br>
+    • <strong>Riserva proteica:</strong> in caso di digiuno prolungato possono essere catabolizzate per produrre aminoacidi<br><br>
+    Un livello basso di albumine (<em>ipoalbuminemia</em>) causa edemi periferici e ascite.`
+  },
+  {
+    q: "6. Qual è il ruolo dell'emoglobina negli eritrociti?",
+    a: `L'<strong>emoglobina (Hb)</strong> è la proteina coniugata contenuta negli eritrociti (circa 280 milioni per globulo rosso) e svolge un ruolo centrale nel trasporto dei gas respiratori:<br><br>
+    • <strong>Trasporto dell'O₂:</strong> si lega all'ossigeno nei polmoni (ossiemoglobina, HbO₂) e lo rilascia nei tessuti periferici dove la pO₂ è bassa<br>
+    • <strong>Trasporto della CO₂:</strong> trasporta circa il 23% dell'anidride carbonica dai tessuti ai polmoni (carbaminoemoglobina)<br>
+    • <strong>Effetto Bohr:</strong> il pH basso e la temperatura elevata nei tessuti metabolicamente attivi favoriscono il rilascio di O₂<br><br>
+    Ogni molecola di Hb è composta da <strong>4 catene polipeptidiche</strong>, ciascuna con un gruppo <em>eme</em> contenente uno ione Fe²⁺.`
+  },
+  {
+    q: "7. Che cosa si intende per diapedesi dei leucociti?",
+    a: `La <strong>diapedesi</strong> (o emigrazione leucocitaria) è il processo attraverso cui i <strong>globuli bianchi</strong> attraversano attivamente la parete dei capillari sanguigni per raggiungere i tessuti colpiti da infezione o infiammazione.<br><br>
+    Le fasi principali sono:<br>
+    1. <strong>Marginazione:</strong> i leucociti si avvicinano alla parete capillare<br>
+    2. <strong>Rolling:</strong> rotolamento lento sulla superficie endoteliale (mediato dalle selectine)<br>
+    3. <strong>Adesione:</strong> legame stabile grazie alle integrine<br>
+    4. <strong>Diapedesi vera:</strong> il leucocita si insinua tra le cellule endoteliali o le attraversa (transcitosi)<br><br>
+    Il processo è stimolato da citochine e chemiochine rilasciate in sede di infiammazione.`
+  },
+  {
+    q: "8. Come si caratterizzano i globuli rossi falciformi?",
+    a: `I <strong>globuli rossi falciformi</strong> sono eritrociti morfologicamente anomali tipici dell'<strong>anemia falciforme</strong>, malattia genetica autosomica recessiva causata da una mutazione puntiforme nel gene della catena β-globinica dell'emoglobina (HbS).<br><br>
+    Caratteristiche principali:<br>
+    • <strong>Forma:</strong> a mezzaluna o falce (da cui il nome) invece del normale disco biconcavo<br>
+    • <strong>Rigidità:</strong> sono molto meno deformabili degli eritrociti normali<br>
+    • <strong>Conseguenze cliniche:</strong> ostruiscono i capillari (crisi vaso-occlusive), causando forti dolori, ischemia e danni d'organo<br>
+    • <strong>Emivita ridotta:</strong> circa 20 giorni invece dei normali 120, causando anemia emolitica cronica<br><br>
+    La mutazione conferisce però una certa <em>protezione dalla malaria</em> nei soggetti eterozigoti.`
+  },
+  {
+    q: "9. Quali sono gli agranulociti e quali funzioni svolgono?",
+    a: `Gli <strong>agranulociti</strong> sono leucociti privi di granuli specifici nel citoplasma. Comprendono due tipi:<br><br>
+    <strong>🔵 Linfociti (20–40% dei leucociti):</strong><br>
+    • <em>Linfociti B:</em> producono anticorpi (immunità umorale)<br>
+    • <em>Linfociti T:</em> attaccano direttamente le cellule infette/tumorali (immunità cellulare) e regolano la risposta immunitaria<br>
+    • <em>Cellule NK (Natural Killer):</em> distruggono cellule tumorali e infettate da virus<br><br>
+    <strong>🟣 Monociti (3–8% dei leucociti):</strong><br>
+    • Sono le cellule più grandi del sangue periferico<br>
+    • Migrano nei tessuti e si differenziano in <em>macrofagi</em> e <em>cellule dendritiche</em><br>
+    • Svolgono <strong>fagocitosi</strong> di agenti patogeni, detriti cellulari e cellule apoptotiche<br>
+    • Presentano gli antigeni ai linfociti T (cellule presentanti l'antigene, APC)`
+  },
+  {
+    q: "10. Che cosa sono i megacariociti?",
+    a: `I <strong>megacariociti</strong> sono cellule giganti (diametro: 50–150 µm) del midollo osseo rosso, caratterizzate da un nucleo polilobato e poliplo idi (fino a 64N di DNA).<br><br>
+    La loro funzione principale è la <strong>produzione delle piastrine (trombociti):</strong><br>
+    • Il citoplasma del megacariocita si estende in lunghe propaggini (<em>proplatelette</em>) che si frammentano nei sinusoidi del midollo<br>
+    • Ogni megacariocita può produrre fino a <strong>1.000–3.000 piastrine</strong><br>
+    • Le piastrine vengono poi rilasciate nel circolo sanguigno, dove sopravvivono circa 7–10 giorni<br><br>
+    I megacariociti sono indispensabili per l'<strong>emostasi</strong>: le piastrine da loro prodotte si aggregano nel sito di una lesione vascolare formando il <em>tappo piastrinico</em> che blocca l'emorragia.`
+  }
+];
+
+let current = 0;
+let allOpen = false;
+
+function renderDeck() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'card' + (i === current ? ' active' : ' hidden');
+    div.id = 'card-' + i;
+    div.innerHTML = `
+      <div class="card-num">Domanda ${i+1} di ${cards.length}</div>
+      <div class="question">${c.q}</div>
+      <div>
+        <button class="btn-reveal" onclick="toggleAnswer(${i})">👁 Mostra risposta</button>
+      </div>
+      <div class="answer-reveal" id="ans-${i}">
+        <div style="height:14px"></div>
+        <div class="answer-box">${c.a}</div>
+        <div style="margin-top:14px">
+          <button class="btn-reveal hide-btn" onclick="toggleAnswer(${i})">✕ Nascondi</button>
+        </div>
+      </div>
+    `;
+    deck.appendChild(div);
+  });
+  updateProgress();
+}
+
+function toggleAnswer(i) {
+  const ans = document.getElementById('ans-' + i);
+  ans.classList.toggle('open');
+}
+
+function changeCard(dir) {
+  const prev = current;
+  current = Math.max(0, Math.min(cards.length - 1, current + dir));
+  if (prev === current) return;
+
+  document.getElementById('card-' + prev).classList.remove('active');
+  document.getElementById('card-' + prev).classList.add('hidden');
+  document.getElementById('card-' + current).classList.remove('hidden');
+  document.getElementById('card-' + current).classList.add('active');
+
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === cards.length - 1;
+
+  if (current === cards.length - 1) {
+    document.getElementById('nextBtn').textContent = '✓ Fine';
+  } else {
+    document.getElementById('nextBtn').textContent = 'Successiva →';
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const pct = ((current + 1) / cards.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `Domanda ${current + 1} di ${cards.length}`;
+}
+
+function toggleAllCards() {
+  const deck = document.getElementById('deck');
+  const nav = document.getElementById('nav');
+  const all = document.getElementById('allCards');
+  const btn = document.querySelector('.toggle-btn');
+
+  if (!allOpen) {
+    allOpen = true;
+    deck.style.display = 'none';
+    nav.style.display = 'none';
+    all.classList.add('show');
+    btn.textContent = '← Torna al quiz';
+
+    all.innerHTML = '';
+    cards.forEach((c, i) => {
+      const div = document.createElement('div');
+      div.className = 'all-card';
+      div.innerHTML = `
+        <div class="card-num">Domanda ${i+1}</div>
+        <div class="question">${c.q}</div>
+        <div style="margin-top:16px">
+          <button class="btn-reveal" onclick="toggleAllAns(${i})">👁 Mostra risposta</button>
+        </div>
+        <div class="answer-reveal" id="all-ans-${i}">
+          <div style="height:14px"></div>
+          <div class="answer-box">${c.a}</div>
+          <div style="margin-top:14px">
+            <button class="btn-reveal hide-btn" onclick="toggleAllAns(${i})">✕ Nascondi</button>
+          </div>
+        </div>
+      `;
+      all.appendChild(div);
+    });
+  } else {
+    allOpen = false;
+    deck.style.display = '';
+    nav.style.display = '';
+    all.classList.remove('show');
+    btn.textContent = '📋 Mostra tutte le domande';
+  }
+}
+
+function toggleAllAns(i) {
+  document.getElementById('all-ans-' + i).classList.toggle('open');
+}
+
+renderDeck();
+</script>
+</body>
+  </html>
